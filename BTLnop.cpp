@@ -44,7 +44,7 @@ string formatTime(time_t t) {
 
 string toUpperStr(string s) {
     for (int i = 0; i < s.size(); i++) {
-        s[i] = toupper((unsigned char)s[i]);
+        s[i] = toupper(s[i]);
     }
     return s;
 }
@@ -650,7 +650,12 @@ while (true) {
         int seconds = (int)(diff - hours * 3600 - minutes * 60);
 
         double totalHours = diff / 3600.0;
-        long long base = (x.type == "XM") ? 5000 : 10000;
+       long long base;
+if (x.type == "XM") {
+    base = 5000;
+} else {
+    base = 10000;
+}
         long long fee = base;
         if (totalHours > 1.0) {
             fee = base + (long long)((ceil(totalHours) - 1.0)) * base;
@@ -718,21 +723,24 @@ void quanLyTimXe(Stack &baiXeXeMay, Stack &baiXeOto, Queue &hangChoXeMay, Queue 
         cin.ignore(1024, '\n');
     }
 
-    Vehicle* hienTai = nullptr;
+    Vehicle* hienTai = NULL;
     bool timThay = false;
+    
+        Vehicle* danhSach[4] = { baiXeXeMay.top, baiXeOto.top, hangChoXeMay.head, hangChoOto.head };
 
     if (luaChon == 1) {
         int maVe;
         cout << "Nhập mã vé: ";
-        while (true) {
-            cin >> maVe;
-            if (!cin.fail()) break;
-            cout << "Mã vé không hợp lệ. Nhập lại: ";
-            cin.clear();
-            cin.ignore(1024, '\n');
-        }
+       while (true) {
+    if (cin >> maVe) {
+        break; // nhập thành công, thoát khỏi vòng lặp
+    } else {
+        cout << "Mã vé không hợp lệ. Nhập lại: ";
+        cin.clear();
+        cin.ignore(1024, '\n');
+    }
+}
 
-        Vehicle* danhSach[4] = { baiXeXeMay.top, baiXeOto.top, hangChoXeMay.head, hangChoOto.head };
 
         for (int i = 0; i < 4 && !timThay; i++) {
             hienTai = danhSach[i];
@@ -750,8 +758,6 @@ void quanLyTimXe(Stack &baiXeXeMay, Stack &baiXeOto, Queue &hangChoXeMay, Queue 
         cout << "Nhập biển số (chính xác): ";
         cin >> bienSo;
         string bienSoChuan = toUpperStr(bienSo);
-
-        Vehicle* danhSach[4] = { baiXeXeMay.top, baiXeOto.top, hangChoXeMay.head, hangChoOto.head };
 
         for (int i = 0; i < 4 && !timThay; i++) {
             hienTai = danhSach[i];
@@ -789,30 +795,155 @@ void quanLyTimXe(Stack &baiXeXeMay, Stack &baiXeOto, Queue &hangChoXeMay, Queue 
     cout << "| Phí gửi xe     | " << setw(53) << left << "-" << "\n";
     cout << "+==========================================================================+\n";
 }
+ void timKiemXe(Stack &baiXeXM, Stack &baiXeOTO, Queue &hangChoXM, Queue &hangChoOTO, LichSuManager &lichSu) {
+    int luaChon;
+    cout << "\n=== CHỌN KIỂU TÌM KIẾM ===\n";
+    cout << "1. Theo MÃ SỐ VÉ\n";
+    cout << "2. Theo BIỂN SỐ XE\n";
+    cout << "Nhập lựa chọn (1 hoặc 2): ";
+
+    while (true) {
+        cin >> luaChon;
+        if (luaChon == 1 || luaChon == 2) break;
+        cout << "Lựa chọn không hợp lệ. Nhập lại (1 hoặc 2): ";
+        cin.clear();
+        cin.ignore(1024, '\n');
+    }
+
+    Vehicle* danhSach[4] = { baiXeXM.top, baiXeOTO.top, hangChoXM.head, hangChoOTO.head };
+    string tenViTri[4] = { "Bãi XM", "Bãi OTO", "Hàng chờ XM", "Hàng chờ OTO" };
+
+    bool timThay = false;
+    Vehicle* xeTimThay = NULL;
+
+    // === TÌM CHÍNH XÁC ===
+    if (luaChon == 1) {
+        int maVe;
+        cout << "Nhập mã vé: ";
+        while (!(cin >> maVe)) {
+            cout << "Mã vé không hợp lệ. Nhập lại: ";
+            cin.clear();
+            cin.ignore(1024, '\n');
+        }
+
+        for (int i = 0; i < 4 && !timThay; i++) {
+            Vehicle* cur = danhSach[i];
+            while (cur) {
+                if (cur->info.id == maVe) {
+                    xeTimThay = cur;
+                    timThay = true;
+                    cout << "\n✅ TÌM THẤY KẾT QUẢ CHÍNH XÁC:\n";
+                    cout << "Mã vé: " << cur->info.id << " | Biển số: " << cur->info.plate
+                         << " | Loại: " << cur->info.type << " | Vị trí: " << tenViTri[i]
+                         << " | Giờ vào: " << formatTime(cur->info.inTime) << "\n";
+                    break;
+                }
+                cur = cur->next;
+            }
+        }
+    } else {
+        string bienSo;
+        cout << "Nhập biển số xe: ";
+        cin >> bienSo;
+        string bienSoChuan = toUpperStr(bienSo);
+
+        for (int i = 0; i < 4 && !timThay; i++) {
+            Vehicle* cur = danhSach[i];
+            while (cur) {
+                if (toUpperStr(cur->info.plate) == bienSoChuan) {
+                    xeTimThay = cur;
+                    timThay = true;
+                    cout << "\n✅ TÌM THẤY KẾT QUẢ CHÍNH XÁC:\n";
+                    cout << "Mã vé: " << cur->info.id << " | Biển số: " << cur->info.plate
+                         << " | Loại: " << cur->info.type << " | Vị trí: " << tenViTri[i]
+                         << " | Giờ vào: " << formatTime(cur->info.inTime) << "\n";
+                    break;
+                }
+                cur = cur->next;
+            }
+        }
+    }
+
+    // === KHÔNG TÌM THẤY -> TÌM GẦN ĐÚNG ===
+    if (!timThay) {
+        cout << "\n⚠️  Không tìm thấy kết quả chính xác. Tiến hành tìm gần đúng...\n";
+        string key;
+
+        if (luaChon == 1) {  // Tìm gần đúng theo mã vé
+            cout << "Nhập ký tự gợi nhớ trong mã vé: ";
+            cin >> key;
+        } else {              // Tìm gần đúng theo biển số
+            cout << "Nhập ký tự gợi nhớ trong biển số: ";
+            cin >> key;
+            key = toUpperStr(key);
+        }
+
+        bool timThayGanDung = false;
+        cout << "\n┌─────────────────────── KẾT QUẢ TÌM KIẾM GẦN ĐÚNG ───────────────────────┐\n";
+        cout << "│ " << left << setw(4) << "ID" << " │ " << setw(14) << "BIỂN SỐ" << " │ "
+             << setw(10) << "LOẠI" << " │ " << setw(15) << "VỊ TRÍ" << " │ "
+             << setw(25) << "GIỜ VÀO" << " │\n";
+        cout << "├──────────────────────────────────────────────────────────────────────────┤\n";
+
+        for (int i = 0; i < 4; i++) {
+            Vehicle* cur = danhSach[i];
+            while (cur) {
+                string soSanh = (luaChon == 1) ? to_string(cur->info.id) : toUpperStr(cur->info.plate);
+                if (soSanh.find(key) != string::npos) {
+                    timThayGanDung = true;
+                    cout << "│ " << setw(4) << cur->info.id
+                         << " │ " << setw(14) << cur->info.plate
+                         << " │ " << setw(10) << cur->info.type
+                         << " │ " << setw(15) << tenViTri[i]
+                         << " │ " << setw(25) << formatTime(cur->info.inTime) << " │\n";
+                }
+                cur = cur->next;
+            }
+        }
+
+        cout << "└──────────────────────────────────────────────────────────────────────────┘\n";
+
+        if (!timThayGanDung) {
+            cout << "\n>> Không tìm thấy kết quả gần đúng.\n";
+            cout << ">> Kiểm tra trong lịch sử xe đã rời bãi:\n";
+            lichSu.showAllHistory();
+        }
+    }
+}
 
 
 // ======= Hiển thị menu =======
-void showMenu() {
-  cout << "\n+=============================================================================================================================+\n";
-    cout << "|  1. Them xe vao bai (hien thi chi tiet + ve)  |  2. Xuat xe (theo stack / bien so)  |  3. Hien thi danh sach                |\n";
-    cout << "+-----------------------------------------------------------------------------------------------------------------------------+\n";
-    cout << "|  4. So do bai xe                              |  5. Hien thi hang cho               |  6. Doanh thu hien tai                |\n";
-    cout << "+-----------------------------------------------------------------------------------------------------------------------------+\n";
-    cout << "|  7. Tim kiem xe gan dung theo bien so         |  8. Quan ly lich su xe da ra        |  9.Tim xe theo bien so/id (chính xác  |\n";
-    cout << "+-----------------------------------------------------------------------------------------------------------------------------+\n";
-    cout << "| 10. Thong ke theo loai xe (XM / OTO)          | 11. Thong ke tong quan              |  0. Thoát chương trình                |\n";
-    cout << "+-----------------------------------------------------------------------------------------------------------------------------+\n";
-    cout << "+=============================================================================================================================+\n";
-    cout << "                                                → Nhap lua chon cua ban :  ";
-}
+// void showMenu() {
+//   cout << "\n+=============================================================================================================================+\n";
+//     cout << "|  1. Them xe vao bai (hien thi chi tiet + ve)  |  2. Xuat xe (theo stack / bien so)  |  3. Hien thi danh sach                |\n";
+//     cout << "+-----------------------------------------------------------------------------------------------------------------------------+\n";
+//     cout << "|  4. So do bai xe                              |  5. Hien thi hang cho               |  6. Doanh thu hien tai                |\n";
+//     cout << "+-----------------------------------------------------------------------------------------------------------------------------+\n";
+//     cout << "|  7. Tim kiem xe gan dung theo bien so         |  8. Quan ly lich su xe da ra        |  9.Tim xe theo bien so/id (chính xác  |\n";
+//     cout << "+-----------------------------------------------------------------------------------------------------------------------------+\n";
+//     cout << "| 10. Thong ke theo loai xe (XM / OTO)          | 11. Thong ke tong quan              |  0. Thoát chương trình                |\n";
+//     cout << "+-----------------------------------------------------------------------------------------------------------------------------+\n";
+//     cout << "+=============================================================================================================================+\n";
+//     cout << "                                                → Nhap lua chon cua ban :  ";
+// }
 // ======= MAIN =======
+void showMenu() {
+cout << "\n+=============================================================================================================================+\n";
+cout << "|  1. Them xe vao bai (hien thi chi tiet + ve)  |  2. Xuat xe (theo stack / bien so)  |  3. Hien thi thong tin                |\n";
+cout << "+-----------------------------------------------------------------------------------------------------------------------------+\n";
+cout << "|  4. Tim kiem xe                               |  5. Quan ly lich su xe da ra        |  6. Thong ke tong quan                |\n";
+cout << "+-----------------------------------------------------------------------------------------------------------------------------+\n";
+cout << "|  0. Thoat chuong trinh                                                                                                     |\n";
+cout << "+=============================================================================================================================+\n";
+cout << "                                                → Nhap lua chon cua ban :  ";
+}
 int main() {
     vector<NhanVien> dsNV;
     NhanVien nv1; nv1.username = "admin"; nv1.password = "123"; nv1.name = "Pham Ngoc Hung";
     dsNV.push_back(nv1);
     NhanVien nv2; nv2.username = "admin"; nv2.password = "111"; nv2.name = "Pham Ngoc Dung ";
     dsNV.push_back(nv2);
-    NhanVien nv3; nv3.username = "admin"; nv3.password = "222"; nv3.name = "Tran Trong NguyenNguyen";
+    NhanVien nv3; nv3.username = "admin"; nv3.password = "222"; nv3.name = "Tran Trong Nguyen";
     dsNV.push_back(nv3);
     NhanVien nv4; nv4.username = "admin"; nv4.password = "333"; nv4.name = "Nguyen Thanh Binh";
     dsNV.push_back(nv4);
@@ -843,35 +974,26 @@ int main() {
             cin.ignore(1024, '\n');
             cout << "Lựa chọn không hợp lệ. Nhập lại: ";
         }
-
-       if (choice == 1) {
+         if (choice == 1) {
     themXe(parkingXM, parkingOTO, waitingXM, waitingOTO, idCounter);
-}
-      else if (choice == 2) {
+ }
+    else if (choice == 2) {
     xuatXe(parkingXM, parkingOTO, waitingXM, waitingOTO, history, doanhThu);
-}
-
-        else if (choice == 3) {
+ }
+  else if (choice == 3) {
             cout << "\n--- Bãi xe XM ---\n";
              parkingXM.display();
             cout << "\n--- Bãi xe OTO ---\n"; 
             parkingOTO.display();
-        }
-        else if (choice == 4) {
-cout << "\n--- Sơ đồ bãi XM ---\n"; parkingXM.showSlots();
+            cout << "\n--- Sơ đồ bãi XM ---\n"; parkingXM.showSlots();
             cout << "\n--- Sơ đồ bãi OTO ---\n"; parkingOTO.showSlots();
-        }
-        else if (choice == 5) {
-            cout << "\n--- Hàng chờ XM ---\n"; waitingXM.display();
+              cout << "\n--- Hàng chờ XM ---\n"; waitingXM.display();
             cout << "\n--- Hàng chờ OTO ---\n"; waitingOTO.display();
         }
-        else if (choice == 6) {
-            cout << ">> Doanh thu hiện tại: " << doanhThu << " VND\n";
-        }
-       else if (choice == 7) {
-    findVehicleApprox(parkingXM, parkingOTO, waitingXM, waitingOTO);
-}
- else if (choice == 8) {
+          else if (choice == 4) {
+            timKiemXe(parkingXM, parkingOTO, waitingXM, waitingOTO, history);
+          }
+           else if (choice == 5) {
             cout << "1. Lịch sử tất cả\n2. Xe gửi lâu nhất\n3. Xe phí cao nhất\n4.Xe phí thấp nhất\n5.Tìm kiếm trong khoảng thời gian\n Chọn   ";
     
             int opt;
@@ -887,19 +1009,10 @@ else if (opt == 4) history.showMinFee();
 else if (opt == 5) history.hienThiXeRaTheoKhoangGio();
 
         }
-
-       else if (choice == 9) {
-    quanLyTimXe(parkingXM, parkingOTO, waitingXM, waitingOTO, history);
-} 
-    
-        else if (choice == 10) {
-            thongKeLoaiXe(parkingXM, parkingOTO, waitingXM, waitingOTO);
+           else if (choice == 6) {
+          thongKeTongQuan(parkingXM, parkingOTO, waitingXM, waitingOTO, doanhThu);
         }
-      
-        else if (choice == 11) {
-            thongKeTongQuan(parkingXM, parkingOTO, waitingXM, waitingOTO, doanhThu);
-        }
-        else if (choice == 0) {
+         else if (choice == 0) {
             cout << "Thoát chương trình.\n";
         } else {
             cout << "Chọn sai, vui lòng chọn lại.\n";
@@ -908,3 +1021,69 @@ else if (opt == 5) history.hienThiXeRaTheoKhoangGio();
 
     return 0;
 }
+
+
+//        if (choice == 1) {
+//     themXe(parkingXM, parkingOTO, waitingXM, waitingOTO, idCounter);
+// }
+//       else if (choice == 2) {
+//     xuatXe(parkingXM, parkingOTO, waitingXM, waitingOTO, history, doanhThu);
+// }
+
+//         else if (choice == 3) {
+//             cout << "\n--- Bãi xe XM ---\n";
+//              parkingXM.display();
+//             cout << "\n--- Bãi xe OTO ---\n"; 
+//             parkingOTO.display();
+//         }
+//         else if (choice == 4) {
+// cout << "\n--- Sơ đồ bãi XM ---\n"; parkingXM.showSlots();
+//             cout << "\n--- Sơ đồ bãi OTO ---\n"; parkingOTO.showSlots();
+//         }
+//         else if (choice == 5) {
+//             cout << "\n--- Hàng chờ XM ---\n"; waitingXM.display();
+//             cout << "\n--- Hàng chờ OTO ---\n"; waitingOTO.display();
+//         }
+//         else if (choice == 6) {
+//             cout << ">> Doanh thu hiện tại: " << doanhThu << " VND\n";
+//         }
+//        else if (choice == 7) {
+//     findVehicleApprox(parkingXM, parkingOTO, waitingXM, waitingOTO);
+// }
+//  else if (choice == 8) {
+//             cout << "1. Lịch sử tất cả\n2. Xe gửi lâu nhất\n3. Xe phí cao nhất\n4.Xe phí thấp nhất\n5.Tìm kiếm trong khoảng thời gian\n Chọn   ";
+    
+//             int opt;
+//             while (!(cin >> opt) || opt < 1 || opt > 5) {
+//                 cin.clear();
+//                 cin.ignore(1024, '\n');
+//                 cout << "Lựa chọn không hợp lệ. Nhập lại: ";
+//             }
+// if (opt == 1) history.showAllHistory();
+// else if (opt == 2) history.showLongestParked();
+// else if (opt == 3) history.showMaxFee();
+// else if (opt == 4) history.showMinFee();
+// else if (opt == 5) history.hienThiXeRaTheoKhoangGio();
+
+//         }
+
+//        else if (choice == 9) {
+//     quanLyTimXe(parkingXM, parkingOTO, waitingXM, waitingOTO, history);
+// } 
+    
+//         else if (choice == 10) {
+//             thongKeLoaiXe(parkingXM, parkingOTO, waitingXM, waitingOTO);
+//         }
+      
+//         else if (choice == 11) {
+//             thongKeTongQuan(parkingXM, parkingOTO, waitingXM, waitingOTO, doanhThu);
+//         }
+//         else if (choice == 0) {
+//             cout << "Thoát chương trình.\n";
+//         } else {
+//             cout << "Chọn sai, vui lòng chọn lại.\n";
+//         }
+//     } while (choice != 0);
+
+//     return 0;
+// }
